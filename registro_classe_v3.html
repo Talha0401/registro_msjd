@@ -206,6 +206,24 @@ const db = { A:{studenti:[],presenze:{},argomenti:[],voti:[]}, B:{studenti:[],pr
 let gruppoCorrente = 'A';
 function G(){ return db[gruppoCorrente]; }
 
+function generaAnniSelect(idSelect){
+  const select = document.getElementById(idSelect);
+  const annoCorrente = new Date().getFullYear();
+
+  select.innerHTML = '';
+
+  for(let i = 0; i < 5; i++){
+    const anno = annoCorrente - 4 + i; // ultimi 5 anni
+    const opt = document.createElement('option');
+    opt.value = anno;
+    opt.textContent = anno;
+
+    if(anno === annoCorrente) opt.selected = true;
+
+    select.appendChild(opt);
+  }
+}
+
 // Genera tutte le date sab/dom/lun/mar di un dato mese/anno
 function getDateLezione(anno, mese) {
   const date = [];
@@ -452,6 +470,9 @@ dateAprile.forEach(d=>{
 });
 db.A.argomenti=[{id:'a1',data:'2026-04-05',titolo:"Tajweed - regole nun sakin",note:'Pagine 12-15'},{id:'a2',data:'2026-04-12',titolo:"Memorizzazione Surah Al-Mulk",note:''}];
 
+generaAnniSelect('sel-anno');
+generaAnniSelect('sel-anno-arg');
+generaAnniSelect('sel-anno-ris');
 aggiornaSelezioniStudenti();
 renderPresenze();
 </script>
