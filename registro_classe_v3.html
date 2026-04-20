@@ -94,6 +94,7 @@ select option{background:#1a1a1a;color:#e8e6e0;}
   <button class="tab" onclick="switchTab('argomenti')">Argomenti</button>
   <button class="tab" onclick="switchTab('voti')">Voti</button>
   <button class="tab" onclick="switchTab('riepilogo')">Riepilogo</button>
+  <button class="tab" onclick="switchTab('gestisci')">Gestisci</button>
 </div>
 
 <!-- PRESENZE -->
@@ -108,7 +109,6 @@ select option{background:#1a1a1a;color:#e8e6e0;}
       <option value="8">Settembre</option><option value="9">Ottobre</option>
       <option value="10">Novembre</option><option value="11">Dicembre</option>
     </select>
-    <button class="btn" onclick="openModalStudente()">+ Studente</button>
   </div>
   <div class="table-wrap">
     <table><thead id="thead-presenze"></thead><tbody id="tbody-presenze"></tbody></table>
@@ -130,7 +130,7 @@ select option{background:#1a1a1a;color:#e8e6e0;}
     <button class="btn" onclick="openModalArgomento()">+ Argomento</button>
   </div>
   <div class="table-wrap">
-    <table><thead><tr><th>Data</th><th>Argomento</th><th>Note</th><th></th></tr></thead>
+    <table><thead><tr><th>Data</th><th>Argomento</th><th>Note</th><th></th><th></th></tr></thead>
     <tbody id="tbody-argomenti"></tbody></table>
   </div>
 </div>
@@ -142,7 +142,7 @@ select option{background:#1a1a1a;color:#e8e6e0;}
     <button class="btn" onclick="openModalVoto()">+ Voto</button>
   </div>
   <div class="table-wrap">
-    <table><thead><tr><th>Studente</th><th>Data</th><th>Tipo</th><th>Voto</th><th>Note</th><th></th></tr></thead>
+    <table><thead><tr><th>Studente</th><th>Data</th><th>Tipo</th><th>Voto</th><th>Note</th><th></th><th></th></tr></thead>
     <tbody id="tbody-voti"></tbody></table>
   </div>
 </div>
@@ -164,6 +164,31 @@ select option{background:#1a1a1a;color:#e8e6e0;}
   <div class="table-wrap">
     <table><thead><tr><th>Studente</th><th>Presenti</th><th>Assenti</th><th>Ritardi</th><th>% presenze</th><th>Media voti</th></tr></thead>
     <tbody id="tbody-riepilogo"></tbody></table>
+  </div>
+</div>
+
+<!-- GESTISCI STUDENTI -->
+<div id="tab-gestisci" class="section">
+  <div class="top-bar">
+    <button class="btn primary" onclick="openModalStudente()">+ Aggiungi studente</button>
+    <select id="filtro-gruppo-gestisci" onchange="renderGestisci()" style="font-size:13px;padding:6px 10px;border-radius:8px;border:.5px solid #333;background:#1a1a1a;color:#e8e6e0;height:34px;">
+      <option value="">Tutti i gruppi</option>
+      <option value="A">Gruppo A</option>
+      <option value="B">Gruppo B</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Gruppo</th>
+          <th></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody-gestisci"></tbody>
+    </table>
   </div>
 </div>
 
@@ -191,6 +216,11 @@ select option{background:#1a1a1a;color:#e8e6e0;}
     <h3>Nuovo studente</h3>
     <label>Nome e cognome</label>
     <input type="text" id="m-nome" placeholder="Es. Mario Rossi">
+    <label>Gruppo</label>
+    <select id="m-gruppo-studente">
+      <option value="A">Gruppo A</option>
+      <option value="B">Gruppo B</option>
+    </select>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('modal-studente')">Annulla</button>
       <button class="btn primary" onclick="aggiungiStudente()">Aggiungi</button>
@@ -198,7 +228,46 @@ select option{background:#1a1a1a;color:#e8e6e0;}
   </div>
 </div>
 
-<!-- MODAL ARGOMENTO -->
+<!-- MODAL MODIFICA STUDENTE -->
+<div class="modal-bg" id="modal-modifica-studente">
+  <div class="modal">
+    <h3>Modifica studente</h3>
+    <input type="hidden" id="m-mod-stud-id">
+    <input type="hidden" id="m-mod-stud-gruppo-old">
+    <label>Nome e cognome</label>
+    <input type="text" id="m-mod-stud-nome" placeholder="Es. Mario Rossi">
+    <label>Gruppo</label>
+    <select id="m-mod-stud-gruppo">
+      <option value="A">Gruppo A</option>
+      <option value="B">Gruppo B</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-modifica-studente')">Annulla</button>
+      <button class="btn primary" onclick="salvaModificaStudente()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ELIMINA STUDENTE -->
+<div class="modal-bg" id="modal-elimina-studente">
+  <div class="modal">
+    <h3>Conferma rimozione</h3>
+    <p style="font-size:13px;color:#888;margin-bottom:1rem;line-height:1.6">Stai per rimuovere il seguente studente. Verranno eliminate anche tutte le sue presenze e voti.</p>
+    <div style="background:#1a1a1a;border:.5px solid #333;border-radius:8px;padding:0.9rem 1rem;margin-bottom:1rem;">
+      <div style="font-size:13px;color:#666;margin-bottom:4px;">Nome</div>
+      <div id="m-elimina-nome" style="font-size:15px;font-weight:500;color:#e8e6e0;"></div>
+    </div>
+    <div style="background:#1a1a1a;border:.5px solid #333;border-radius:8px;padding:0.9rem 1rem;margin-bottom:1.25rem;">
+      <div style="font-size:13px;color:#666;margin-bottom:4px;">Gruppo di appartenenza</div>
+      <div id="m-elimina-gruppo" style="font-size:15px;font-weight:500;"></div>
+    </div>
+    <p style="font-size:12px;color:#f09595;margin-bottom:1rem;">Questa azione non può essere annullata.</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-elimina-studente')">Annulla</button>
+      <button class="btn danger" style="border-color:#f09595" id="btn-conferma-elimina" onclick="confermaEliminaStudente()">Sì, rimuovi</button>
+    </div>
+  </div>
+</div>
 <div class="modal-bg" id="modal-argomento">
   <div class="modal">
     <h3>Aggiungi argomento</h3>
@@ -236,6 +305,46 @@ select option{background:#1a1a1a;color:#e8e6e0;}
   </div>
 </div>
 
+<!-- MODAL MODIFICA ARGOMENTO -->
+<div class="modal-bg" id="modal-modifica-argomento">
+  <div class="modal">
+    <h3>Modifica argomento</h3>
+    <input type="hidden" id="m-mod-arg-id">
+    <label>Data lezione</label>
+    <select id="m-mod-arg-data"></select>
+    <label>Argomento svolto</label>
+    <input type="text" id="m-mod-arg-titolo" placeholder="Es. Tajweed - regole nun sakin">
+    <label>Note aggiuntive</label>
+    <textarea id="m-mod-arg-note" placeholder="Dettagli, materiali, ecc."></textarea>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-modifica-argomento')">Annulla</button>
+      <button class="btn primary" onclick="salvaModificaArgomento()">Salva</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MODIFICA VOTO -->
+<div class="modal-bg" id="modal-modifica-voto">
+  <div class="modal">
+    <h3>Modifica voto</h3>
+    <input type="hidden" id="m-mod-voto-id">
+    <label>Studente</label>
+    <select id="m-mod-voto-studente"></select>
+    <label>Data</label>
+    <input type="date" id="m-mod-voto-data">
+    <label>Tipo valutazione</label>
+    <input type="text" id="m-mod-voto-materia" placeholder="Es. Verifica, Orale, Recita...">
+    <label>Voto</label>
+    <input type="number" id="m-mod-voto-val" min="1" max="10" step="0.5" placeholder="1–10">
+    <label>Note</label>
+    <textarea id="m-mod-voto-note" placeholder="Osservazioni facoltative"></textarea>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-modifica-voto')">Annulla</button>
+      <button class="btn primary" onclick="salvaModificaVoto()">Salva</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ─── COSTANTI ────────────────────────────────────────────
 const GIORNI_LEZIONE = [6, 0, 1, 2]; // sab, dom, lun, mar
@@ -251,10 +360,14 @@ const db = {
 let gruppoCorrente = 'A';
 function G(){ return db[gruppoCorrente]; }
 
+// ─── DIRTY FLAG — ri-renderizza tab solo se i dati sono cambiati ─────
+const dirty = { presenze: true, argomenti: true, voti: true, riepilogo: true, gestisci: true };
+function markDirty(sezione){ dirty[sezione] = true; }
+function markDirtyAll(){ Object.keys(dirty).forEach(k => dirty[k] = true); }
+function dirtyAll(){ markDirtyAll(); } // alias usato dopo loadFromSheets
+
 // ─── GOOGLE SHEETS CONFIG ────────────────────────────────
 let SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-7TfHp0148JtbtHmeHHEDkgETdkobzkHtbkFbqoNpreWco42fvH9t9AZpYdWuSpAB/exec";
-let syncPending = false;
-let syncTimer = null;
 
 function setSyncStatus(stato, msg) {
   const dot = document.getElementById('sync-dot');
@@ -286,13 +399,10 @@ async function loadFromSheets(gruppo) {
     const res = await fetch(url);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
-    // Carica studenti
     if (data.studenti && data.studenti.length) db[gruppo].studenti = data.studenti;
-    // Carica presenze — normalizza le chiavi a stringa YYYY-MM-DD
     if (data.presenze && Object.keys(data.presenze).length) {
       const presenzeNorm = {};
       Object.entries(data.presenze).forEach(([dataKey, studObj]) => {
-        // Sheets a volte restituisce la data come "2026-04-05T00:00:00.000Z" o simili
         const keyPulita = String(dataKey).substring(0, 10);
         presenzeNorm[keyPulita] = {};
         Object.entries(studObj).forEach(([sid, stato]) => {
@@ -301,26 +411,38 @@ async function loadFromSheets(gruppo) {
       });
       db[gruppo].presenze = presenzeNorm;
     }
-    if (data.argomenti && data.argomenti.length) db[gruppo].argomenti = data.argomenti;
-    if (data.voti && data.voti.length) db[gruppo].voti = data.voti;
+    if (data.argomenti && data.argomenti.length) {
+      db[gruppo].argomenti = data.argomenti.map(a => ({
+        id:     String(a.id     || ''),
+        data:   String(a.data   || '').substring(0, 10),
+        titolo: String(a.titolo || ''),
+        note:   String(a.note   || '')
+      }));
+    }
+    if (data.voti && data.voti.length) {
+      db[gruppo].voti = data.voti.map(v => ({
+        id:      String(v.id      || ''),
+        sid:     String(v.sid     || ''),
+        data:    String(v.data    || '').substring(0, 10),
+        materia: String(v.materia || ''),
+        val:     parseFloat(v.val) || 0,
+        note:    String(v.note    || '')
+      }));
+    }
     setSyncStatus('ok', 'Sincronizzato — ' + new Date().toLocaleTimeString('it-IT'));
+    // Invalida tutte le tab così al prossimo accesso si ri-renderizzano
+    dirtyAll();
     aggiornaSelezioniStudenti();
-    renderTabCorrente();
   } catch(e) {
     setSyncStatus('error', 'Errore: ' + e.message);
   }
 }
 
-// ─── SYNC: SALVA SU SHEETS (con debounce 2s) ─────────────
-function scheduleSave() {
-  if (!SCRIPT_URL) return;
-  setSyncStatus('loading', 'In salvataggio...');
-  clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => saveToSheets(gruppoCorrente), 2000);
-}
+// ─── SYNC: SALVA SU SHEETS ───────────────────────────────
+// Timer separato per sezione — evita di risalvare tutto per una singola modifica
+const saveTimers = {};
 
 async function gsFetch(action, gruppo, payload) {
-  // Usa GET con i parametri — Apps Script accetta solo GET per doGet
   const url = SCRIPT_URL
     + '?action=' + action
     + '&gruppo=' + gruppo
@@ -331,29 +453,53 @@ async function gsFetch(action, gruppo, payload) {
   return json;
 }
 
-async function saveToSheets(gruppo) {
+// scheduleSave(sezione) — salva solo la sezione modificata dopo 4s di inattività
+// sezioni valide: 'studenti' | 'presenze' | 'argomenti' | 'voti' | 'all'
+function scheduleSave(sezione) {
   if (!SCRIPT_URL) return;
-  // Flag anti-doppio-salvataggio
-  if (saveToSheets._running) return;
-  saveToSheets._running = true;
-  try {
-    const g = db[gruppo];
-    // Sequenziale per evitare conflitti sul foglio Google
-    await gsFetch('saveStudenti',  gruppo, g.studenti);
-    await gsFetch('savePresenze',  gruppo, g.presenze);
-    await gsFetch('saveArgomenti', gruppo, g.argomenti);
-    await gsFetch('saveVoti',      gruppo, g.voti);
-    setSyncStatus('ok', 'Salvato — ' + new Date().toLocaleTimeString('it-IT'));
-  } catch(e) {
-    setSyncStatus('error', 'Errore: ' + e.message);
-  } finally {
-    saveToSheets._running = false;
-  }
+  const gruppo = gruppoCorrente;
+  const key = gruppo + '_' + sezione;
+  clearTimeout(saveTimers[key]);
+  saveTimers[key] = setTimeout(async () => {
+    try {
+      const g = db[gruppo];
+      if (sezione === 'all') {
+        // Salva tutto in sequenza — usato solo da syncNow manuale
+        await gsFetch('saveStudenti',  gruppo, g.studenti);
+        await gsFetch('savePresenze',  gruppo, g.presenze);
+        await gsFetch('saveArgomenti', gruppo, g.argomenti);
+        await gsFetch('saveVoti',      gruppo, g.voti);
+      } else {
+        // Salva solo la sezione modificata — 1 fetch invece di 4
+        const actionMap = {
+          studenti:  'saveStudenti',
+          presenze:  'savePresenze',
+          argomenti: 'saveArgomenti',
+          voti:      'saveVoti'
+        };
+        await gsFetch(actionMap[sezione], gruppo, g[sezione]);
+      }
+      setSyncStatus('ok', 'Salvato — ' + new Date().toLocaleTimeString('it-IT'));
+    } catch(e) {
+      setSyncStatus('error', 'Errore: ' + e.message);
+    }
+  }, 4000); // debounce 4 secondi
 }
 
 async function syncNow() {
-  clearTimeout(syncTimer);
-  await saveToSheets(gruppoCorrente);
+  // Cancella tutti i timer pendenti e salva tutto subito
+  Object.keys(saveTimers).forEach(k => clearTimeout(saveTimers[k]));
+  setSyncStatus('loading', 'Salvataggio completo...');
+  try {
+    const g = db[gruppoCorrente];
+    await gsFetch('saveStudenti',  gruppoCorrente, g.studenti);
+    await gsFetch('savePresenze',  gruppoCorrente, g.presenze);
+    await gsFetch('saveArgomenti', gruppoCorrente, g.argomenti);
+    await gsFetch('saveVoti',      gruppoCorrente, g.voti);
+    setSyncStatus('ok', 'Salvato — ' + new Date().toLocaleTimeString('it-IT'));
+  } catch(e) {
+    setSyncStatus('error', 'Errore: ' + e.message);
+  }
 }
 
 // ─── UTILITY ─────────────────────────────────────────────
@@ -408,42 +554,164 @@ function getAnnoMese(){
 function cambiaGruppo(){
   gruppoCorrente = document.getElementById('sel-gruppo').value;
   aggiornaSelezioniStudenti();
-  if(SCRIPT_URL) loadFromSheets(gruppoCorrente);
+  markDirtyAll();
+  if(SCRIPT_URL) loadFromSheets(gruppoCorrente).then(renderTabCorrente);
   else renderTabCorrente();
 }
 
 function renderTabCorrente(){
-  const tabs=['presenze','argomenti','voti','riepilogo'];
+  const tabs=['presenze','argomenti','voti','riepilogo','gestisci'];
   const idx=[...document.querySelectorAll('.tab')].findIndex(b=>b.classList.contains('active'));
   switchTab(tabs[idx]||'presenze');
 }
 
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['presenze','argomenti','voti','riepilogo'][i]===t));
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['presenze','argomenti','voti','riepilogo','gestisci'][i]===t));
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById('tab-'+t).classList.add('active');
-  if(t==='presenze') renderPresenze();
-  if(t==='argomenti') renderArgomenti();
-  if(t==='voti') renderVoti();
-  if(t==='riepilogo') renderRiepilogo();
+  // Ri-renderizza SOLO se i dati sono cambiati dall'ultima visita
+  if(t==='presenze'  && dirty.presenze)  { renderPresenze();  dirty.presenze  = false; }
+  if(t==='argomenti' && dirty.argomenti) { renderArgomenti(); dirty.argomenti = false; }
+  if(t==='voti'      && dirty.voti)      { renderVoti();      dirty.voti      = false; }
+  if(t==='riepilogo' && dirty.riepilogo) { renderRiepilogo(); dirty.riepilogo = false; }
+  if(t==='gestisci'  && dirty.gestisci)  { renderGestisci();  dirty.gestisci  = false; }
 }
 
 function openModal(id){ document.getElementById(id).classList.add('open'); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
 // ─── STUDENTI ────────────────────────────────────────────
-function openModalStudente(){ document.getElementById('m-nome').value=''; openModal('modal-studente'); }
+function openModalStudente(){
+  document.getElementById('m-nome').value='';
+  document.getElementById('m-gruppo-studente').value='A';
+  openModal('modal-studente');
+}
 
 function aggiungiStudente(){
   const nome=document.getElementById('m-nome').value.trim();
+  const gruppo=document.getElementById('m-gruppo-studente').value;
   if(!nome) return;
   const id='s'+Date.now();
-  G().studenti.push({id,nome});
-  Object.keys(G().presenze).forEach(d=>{ G().presenze[d][id]='P'; });
+  db[gruppo].studenti.push({id,nome});
+  Object.keys(db[gruppo].presenze).forEach(d=>{ db[gruppo].presenze[d][id]='P'; });
   closeModal('modal-studente');
   aggiornaSelezioniStudenti();
-  renderPresenze();
-  scheduleSave();
+  markDirty('gestisci'); markDirty('presenze'); markDirty('riepilogo');
+  renderGestisci(); dirty.gestisci = false;
+  scheduleSave('studenti');
+  scheduleSave('presenze');
+}
+
+function renderGestisci(){
+  const tbody=document.getElementById('tbody-gestisci');
+  const filtro=document.getElementById('filtro-gruppo-gestisci').value;
+  let tutti=[
+    ...db.A.studenti.map(s=>({...s,gruppo:'A'})),
+    ...db.B.studenti.map(s=>({...s,gruppo:'B'}))
+  ].sort((a,b)=>a.nome.localeCompare(b.nome));
+  if(filtro) tutti=tutti.filter(s=>s.gruppo===filtro);
+  if(!tutti.length){
+    tbody.innerHTML=`<tr><td class="empty" colspan="4">${filtro?'Nessuno studente nel Gruppo '+filtro:'Nessuno studente ancora'}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML=tutti.map(s=>`<tr>
+    <td style="font-weight:500;color:#e8e6e0">${s.nome}</td>
+    <td><span style="font-size:12px;font-weight:500;color:${s.gruppo==='A'?'#4a9abf':'#9a4abf'};background:${s.gruppo==='A'?'#0d1e26':'#1a0d26'};padding:3px 10px;border-radius:99px;">Gruppo ${s.gruppo}</span></td>
+    <td><button class="btn" style="padding:3px 10px;font-size:11px" onclick="apriModificaStudente('${s.id}','${s.gruppo}')">Modifica</button></td>
+    <td><button class="btn danger" style="padding:3px 10px;font-size:11px" onclick="eliminaStudente('${s.id}','${s.gruppo}')">Rimuovi</button></td>
+  </tr>`).join('');
+}
+
+// id e gruppo dello studente da eliminare — salvati quando si apre la modal
+let _eliminaId = null;
+let _eliminaGruppo = null;
+
+function eliminaStudente(id, gruppo){
+  const s = db[gruppo].studenti.find(s => s.id === id);
+  if(!s) return;
+  _eliminaId = id;
+  _eliminaGruppo = gruppo;
+  // Popola la modal con i dati dello studente
+  document.getElementById('m-elimina-nome').textContent = s.nome;
+  const colGruppo = gruppo === 'A' ? '#4a9abf' : '#9a4abf';
+  const bgGruppo  = gruppo === 'A' ? '#0d1e26' : '#1a0d26';
+  document.getElementById('m-elimina-gruppo').innerHTML =
+    `<span style="color:${colGruppo};background:${bgGruppo};padding:3px 12px;border-radius:99px;">Gruppo ${gruppo}</span>`;
+  openModal('modal-elimina-studente');
+}
+
+function confermaEliminaStudente(){
+  const id = _eliminaId;
+  const gruppo = _eliminaGruppo;
+  if(!id || !gruppo) return;
+  db[gruppo].studenti = db[gruppo].studenti.filter(s => s.id !== id);
+  Object.keys(db[gruppo].presenze).forEach(d => { delete db[gruppo].presenze[d][id]; });
+  db[gruppo].voti = db[gruppo].voti.filter(v => v.sid !== id);
+  _eliminaId = null;
+  _eliminaGruppo = null;
+  closeModal('modal-elimina-studente');
+  aggiornaSelezioniStudenti();
+  markDirtyAll();
+  renderGestisci(); dirty.gestisci = false;
+  scheduleSave('studenti');
+  scheduleSave('presenze');
+  scheduleSave('voti');
+}
+
+function apriModificaStudente(id, gruppo){
+  const s = db[gruppo].studenti.find(s => s.id === id);
+  if(!s) return;
+  document.getElementById('m-mod-stud-id').value        = s.id;
+  document.getElementById('m-mod-stud-gruppo-old').value = gruppo;
+  document.getElementById('m-mod-stud-nome').value       = s.nome;
+  document.getElementById('m-mod-stud-gruppo').value     = gruppo;
+  openModal('modal-modifica-studente');
+}
+
+function salvaModificaStudente(){
+  const id          = document.getElementById('m-mod-stud-id').value;
+  const gruppoOld   = document.getElementById('m-mod-stud-gruppo-old').value;
+  const nome        = document.getElementById('m-mod-stud-nome').value.trim();
+  const gruppoNew   = document.getElementById('m-mod-stud-gruppo').value;
+  if(!id || !nome) return;
+
+  if(gruppoOld === gruppoNew){
+    // Stesso gruppo — aggiorna solo il nome
+    const idx = db[gruppoOld].studenti.findIndex(s => s.id === id);
+    if(idx !== -1) db[gruppoOld].studenti[idx].nome = nome;
+    scheduleSave('studenti');
+  } else {
+    // Cambio gruppo — sposta lo studente e trasferisci presenze/voti
+    db[gruppoOld].studenti = db[gruppoOld].studenti.filter(s => s.id !== id);
+
+    // Aggiungi al nuovo gruppo
+    db[gruppoNew].studenti.push({id, nome});
+
+    // Trasferisci presenze nel nuovo gruppo
+    Object.keys(db[gruppoOld].presenze).forEach(data => {
+      const stato = db[gruppoOld].presenze[data][id];
+      if(stato !== undefined){
+        if(!db[gruppoNew].presenze[data]) db[gruppoNew].presenze[data] = {};
+        db[gruppoNew].presenze[data][id] = stato;
+        delete db[gruppoOld].presenze[data][id];
+      }
+    });
+
+    // Trasferisci voti nel nuovo gruppo
+    const votiDaSpostare = db[gruppoOld].voti.filter(v => v.sid === id);
+    db[gruppoOld].voti   = db[gruppoOld].voti.filter(v => v.sid !== id);
+    db[gruppoNew].voti   = [...db[gruppoNew].voti, ...votiDaSpostare]
+                             .sort((a,b) => a.data.localeCompare(b.data));
+
+    scheduleSave('studenti');
+    scheduleSave('presenze');
+    scheduleSave('voti');
+  }
+
+  closeModal('modal-modifica-studente');
+  aggiornaSelezioniStudenti();
+  markDirtyAll();
+  renderGestisci(); dirty.gestisci = false;
 }
 
 function aggiornaSelezioniStudenti(){
@@ -458,19 +726,26 @@ function renderPresenze(){
   const anno=parseInt(document.getElementById('sel-anno').value);
   const mese=parseInt(document.getElementById('sel-mese').value);
   const date=getDateLezione(anno,mese);
-  initPresenze(date);
+  // initPresenze solo sulle date passate/oggi — non toccare le future
+  const oggi_ = oggi();
+  const datePassate = date.filter(d => d <= oggi_);
+  initPresenze(datePassate);
   const thead=document.getElementById('thead-presenze');
   const tbody=document.getElementById('tbody-presenze');
   thead.innerHTML='<tr><th>Studente</th>'+date.map(d=>{
     const dw=getDow(d);
-    return`<th style="color:${COLORI_GG[dw]||'#666'}"><div class="day-label"><span class="dd">${fmtDisplay(d)}</span><span class="dw" style="color:${COLORI_GG[dw]||'#666'}">${NOMI_GG[dw]}</span></div></th>`;
+    const isFutura = d > oggi_;
+    return`<th style="color:${isFutura?'#2a2a2a':COLORI_GG[dw]||'#666'}"><div class="day-label"><span class="dd">${fmtDisplay(d)}</span><span class="dw" style="color:${isFutura?'#2a2a2a':COLORI_GG[dw]||'#666'}">${NOMI_GG[dw]}</span></div></th>`;
   }).join('')+'</tr>';
   if(!G().studenti.length){
-    tbody.innerHTML=`<tr><td class="empty" colspan="${date.length+1}">Aggiungi studenti con il pulsante + Studente</td></tr>`;
+    tbody.innerHTML=`<tr><td class="empty" colspan="${date.length+1}">Aggiungi studenti dalla tab Gestisci</td></tr>`;
     return;
   }
   tbody.innerHTML=G().studenti.map(s=>{
     const celle=date.map(d=>{
+      const isFutura = d > oggi_;
+      // Cella futura: nera vuota, non cliccabile
+      if(isFutura) return`<td style="background:#0a0a0a;"></td>`;
       const stato=G().presenze[d]?.[s.id]||'P';
       const col=stato==='P'?'#5DCAA5':stato==='A'?'#f09595':'#EF9F27';
       return`<td><select onchange="cambiaStato('${d}','${s.id}',this.value)" style="font-size:12px;border:none;background:none;color:${col};font-weight:500;cursor:pointer;padding:2px 4px;">
@@ -486,7 +761,8 @@ function renderPresenze(){
 function cambiaStato(data,sid,val){
   if(!G().presenze[data]) G().presenze[data]={};
   G().presenze[data][sid]=val;
-  scheduleSave();
+  markDirty('riepilogo');
+  scheduleSave('presenze');
 }
 
 // ─── ARGOMENTI ───────────────────────────────────────────
@@ -507,8 +783,9 @@ function aggiungiArgomento(){
   G().argomenti.push({id:'a'+Date.now(),data,titolo,note:document.getElementById('m-arg-note').value.trim()});
   G().argomenti.sort((a,b)=>a.data.localeCompare(b.data));
   closeModal('modal-argomento');
-  renderArgomenti();
-  scheduleSave();
+  markDirty('riepilogo');
+  renderArgomenti(); dirty.argomenti = false;
+  scheduleSave('argomenti');
 }
 
 function renderArgomenti(){
@@ -519,19 +796,55 @@ function renderArgomenti(){
     const d=new Date(a.data+'T12:00:00');
     return d.getFullYear()===anno&&d.getMonth()===mese;
   });
-  if(!filtrati.length){tbody.innerHTML='<tr><td class="empty" colspan="4">Nessun argomento in questo mese</td></tr>';return;}
+  if(!filtrati.length){tbody.innerHTML='<tr><td class="empty" colspan="5">Nessun argomento in questo mese</td></tr>';return;}
   tbody.innerHTML=filtrati.map(a=>`<tr>
     <td>${fmtDisplay(a.data)} <span style="color:${COLORI_GG[getDow(a.data)]||'#666'};font-size:11px">${NOMI_GG[getDow(a.data)]}</span></td>
     <td style="font-weight:500;color:#e8e6e0">${a.titolo}</td>
     <td style="color:#666;font-size:12px">${a.note||'—'}</td>
+    <td><button class="btn" style="padding:3px 8px;font-size:11px" onclick="apriModificaArgomento('${a.id}')">Modifica</button></td>
     <td><button class="btn danger" style="padding:3px 8px;font-size:11px" onclick="eliminaArgomento('${a.id}')">Elimina</button></td>
   </tr>`).join('');
 }
 
 function eliminaArgomento(id){
   db[gruppoCorrente].argomenti=G().argomenti.filter(a=>a.id!==id);
-  renderArgomenti();
-  scheduleSave();
+  markDirty('riepilogo');
+  renderArgomenti(); dirty.argomenti = false;
+  scheduleSave('argomenti');
+}
+
+function apriModificaArgomento(id){
+  const a = G().argomenti.find(a => a.id === id);
+  if(!a) return;
+  const {anno, mese} = {
+    anno: parseInt(document.getElementById('sel-anno-arg').value),
+    mese: parseInt(document.getElementById('sel-mese-arg').value)
+  };
+  // Popola select date del mese corrente
+  const date = getDateLezione(anno, mese);
+  const sel = document.getElementById('m-mod-arg-data');
+  sel.innerHTML = date.map(d=>`<option value="${d}">${fmtDisplay(d)} ${NOMI_GG[getDow(d)]}</option>`).join('');
+  // Precompila i valori esistenti
+  document.getElementById('m-mod-arg-id').value    = a.id;
+  sel.value                                         = a.data;
+  document.getElementById('m-mod-arg-titolo').value = a.titolo;
+  document.getElementById('m-mod-arg-note').value   = a.note || '';
+  openModal('modal-modifica-argomento');
+}
+
+function salvaModificaArgomento(){
+  const id     = document.getElementById('m-mod-arg-id').value;
+  const data   = document.getElementById('m-mod-arg-data').value;
+  const titolo = document.getElementById('m-mod-arg-titolo').value.trim();
+  if(!id || !data || !titolo) return;
+  const idx = G().argomenti.findIndex(a => a.id === id);
+  if(idx === -1) return;
+  G().argomenti[idx] = { id, data, titolo, note: document.getElementById('m-mod-arg-note').value.trim() };
+  G().argomenti.sort((a,b) => a.data.localeCompare(b.data));
+  closeModal('modal-modifica-argomento');
+  markDirty('riepilogo');
+  renderArgomenti(); dirty.argomenti = false;
+  scheduleSave('argomenti');
 }
 
 // ─── VOTI ────────────────────────────────────────────────
@@ -554,15 +867,16 @@ function aggiungiVoto(){
   G().voti.push({id:'v'+Date.now(),sid,data,materia,val,note:document.getElementById('m-voto-note').value.trim()});
   G().voti.sort((a,b)=>a.data.localeCompare(b.data));
   closeModal('modal-voto');
-  renderVoti();
-  scheduleSave();
+  markDirty('riepilogo');
+  renderVoti(); dirty.voti = false;
+  scheduleSave('voti');
 }
 
 function renderVoti(){
   const tbody=document.getElementById('tbody-voti');
   const sid=document.getElementById('sel-studente-voti').value;
   const filtrati=sid?G().voti.filter(v=>v.sid===sid):G().voti;
-  if(!filtrati.length){tbody.innerHTML='<tr><td class="empty" colspan="6">Nessun voto registrato</td></tr>';return;}
+  if(!filtrati.length){tbody.innerHTML='<tr><td class="empty" colspan="7">Nessun voto registrato</td></tr>';return;}
   tbody.innerHTML=filtrati.map(v=>{
     const s=G().studenti.find(st=>st.id===v.sid);
     const col=v.val>=6?'#5DCAA5':v.val>=5?'#EF9F27':'#f09595';
@@ -572,6 +886,7 @@ function renderVoti(){
       <td>${v.materia}</td>
       <td><span style="font-weight:500;color:${col}">${v.val}</span></td>
       <td style="color:#666;font-size:12px">${v.note||'—'}</td>
+      <td><button class="btn" style="padding:3px 8px;font-size:11px" onclick="apriModificaVoto('${v.id}')">Modifica</button></td>
       <td><button class="btn danger" style="padding:3px 8px;font-size:11px" onclick="eliminaVoto('${v.id}')">Elimina</button></td>
     </tr>`;
   }).join('');
@@ -579,8 +894,42 @@ function renderVoti(){
 
 function eliminaVoto(id){
   db[gruppoCorrente].voti=G().voti.filter(v=>v.id!==id);
-  renderVoti();
-  scheduleSave();
+  markDirty('riepilogo');
+  renderVoti(); dirty.voti = false;
+  scheduleSave('voti');
+}
+
+function apriModificaVoto(id){
+  const v = G().voti.find(v => v.id === id);
+  if(!v) return;
+  // Popola select studenti
+  const sel = document.getElementById('m-mod-voto-studente');
+  sel.innerHTML = G().studenti.map(s=>`<option value="${s.id}">${s.nome}</option>`).join('');
+  // Precompila valori esistenti
+  document.getElementById('m-mod-voto-id').value       = v.id;
+  sel.value                                             = v.sid;
+  document.getElementById('m-mod-voto-data').value     = v.data;
+  document.getElementById('m-mod-voto-materia').value  = v.materia;
+  document.getElementById('m-mod-voto-val').value      = v.val;
+  document.getElementById('m-mod-voto-note').value     = v.note || '';
+  openModal('modal-modifica-voto');
+}
+
+function salvaModificaVoto(){
+  const id      = document.getElementById('m-mod-voto-id').value;
+  const sid     = document.getElementById('m-mod-voto-studente').value;
+  const data    = document.getElementById('m-mod-voto-data').value;
+  const materia = document.getElementById('m-mod-voto-materia').value.trim();
+  const val     = parseFloat(document.getElementById('m-mod-voto-val').value);
+  if(!id || !sid || !data || !materia || isNaN(val)) return;
+  const idx = G().voti.findIndex(v => v.id === id);
+  if(idx === -1) return;
+  G().voti[idx] = { id, sid, data, materia, val, note: document.getElementById('m-mod-voto-note').value.trim() };
+  G().voti.sort((a,b) => a.data.localeCompare(b.data));
+  closeModal('modal-modifica-voto');
+  markDirty('riepilogo');
+  renderVoti(); dirty.voti = false;
+  scheduleSave('voti');
 }
 
 // ─── RIEPILOGO ───────────────────────────────────────────
@@ -618,7 +967,6 @@ generaAnniSelect('sel-anno');
 generaAnniSelect('sel-anno-arg');
 generaAnniSelect('sel-anno-ris');
 
-// Imposta mese corrente
 const meseCorriente = new Date().getMonth();
 ['sel-mese','sel-mese-arg','sel-mese-ris'].forEach(id => {
   document.getElementById(id).value = meseCorriente;
@@ -627,10 +975,13 @@ const meseCorriente = new Date().getMonth();
 aggiornaSelezioniStudenti();
 
 if(SCRIPT_URL){
-  document.getElementById('m-script-url').value = SCRIPT_URL;
-  loadFromSheets('A');
+  setSyncStatus('loading', 'Connessione al database...');
+  // Carica entrambi i gruppi in parallelo all'avvio
+  Promise.all([loadFromSheets('A'), loadFromSheets('B')]).then(() => {
+    renderTabCorrente();
+  });
 } else {
-  setSyncStatus('', 'Non configurato — clicca ⚙ per connettere Google Sheets');
+  setSyncStatus('error', 'URL script non configurato');
   renderPresenze();
 }
 </script>
