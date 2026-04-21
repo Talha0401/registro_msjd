@@ -348,7 +348,7 @@ function markDirtyAll(){ Object.keys(dirty).forEach(k => dirty[k] = true); }
 function dirtyAll(){ markDirtyAll(); } // alias usato dopo loadFromSheets
 
 // ─── GOOGLE SHEETS CONFIG ────────────────────────────────
-let SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-7TfHp0148JtbtHmeHHEDkgETdkobzkHtbkFbqoNpreWco42fvH9t9AZpYdWuSpAB/exec";
+let SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKxCWcUxU1M5nDuufU4JQktRz-c_B4dw36uhjsiIjv_zs4WrIXyLIiogmgCpkFRGb4/exec";
 
 function setSyncStatus(stato, msg) {
   const dot = document.getElementById('sync-dot');
@@ -412,11 +412,13 @@ async function loadFromSheets(gruppo) {
 const saveTimers = {};
 
 async function gsFetch(action, gruppo, payload) {
-  const url = SCRIPT_URL
-    + '?action=' + action
-    + '&gruppo=' + gruppo
-    + '&data=' + encodeURIComponent(JSON.stringify(payload));
-  const res = await fetch(url);
+  // POST invece di GET — evita il limite di lunghezza URL (~8000 char)
+  // che causava perdita silente dei dati di presenze grandi
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action, gruppo, data: payload })
+  });
   const json = await res.json();
   if (json.error) throw new Error(action + ': ' + json.error);
   return json;
@@ -645,7 +647,7 @@ function salvaModificaStudente(){
     // Stesso gruppo — aggiorna solo il nome
     const idx = db[gruppoOld].studenti.findIndex(s => s.id === id);
     if(idx !== -1) db[gruppoOld].studenti[idx].nome = nome;
-    scheduleSave('studenti');
+    scheduleSave('studenti', gruppoCorrente);
   } else {
     // Cambio gruppo — sposta lo studente e trasferisci presenze/voti
     db[gruppoOld].studenti = db[gruppoOld].studenti.filter(s => s.id !== id);
@@ -732,7 +734,7 @@ function cambiaStato(data,sid,val){
   if(!G().presenze[data]) G().presenze[data]={};
   G().presenze[data][sid]=val;
   markDirty('riepilogo');
-  scheduleSave('presenze');
+  scheduleSave('presenze', gruppoCorrente);
 }
 
 // ─── ARGOMENTI ───────────────────────────────────────────
@@ -755,7 +757,7 @@ function aggiungiArgomento(){
   closeModal('modal-argomento');
   markDirty('riepilogo');
   renderArgomenti(); dirty.argomenti = false;
-  scheduleSave('argomenti');
+  scheduleSave('argomenti', gruppoCorrente);
 }
 
 function renderArgomenti(){
@@ -780,7 +782,7 @@ function eliminaArgomento(id){
   db[gruppoCorrente].argomenti=G().argomenti.filter(a=>a.id!==id);
   markDirty('riepilogo');
   renderArgomenti(); dirty.argomenti = false;
-  scheduleSave('argomenti');
+  scheduleSave('argomenti', gruppoCorrente);
 }
 
 function apriModificaArgomento(id){
@@ -814,7 +816,7 @@ function salvaModificaArgomento(){
   closeModal('modal-modifica-argomento');
   markDirty('riepilogo');
   renderArgomenti(); dirty.argomenti = false;
-  scheduleSave('argomenti');
+  scheduleSave('argomenti', gruppoCorrente);
 }
 
 // ─── VOTI ────────────────────────────────────────────────
@@ -839,7 +841,7 @@ function aggiungiVoto(){
   closeModal('modal-voto');
   markDirty('riepilogo');
   renderVoti(); dirty.voti = false;
-  scheduleSave('voti');
+  scheduleSave('voti', gruppoCorrente);
 }
 
 function renderVoti(){
@@ -866,7 +868,7 @@ function eliminaVoto(id){
   db[gruppoCorrente].voti=G().voti.filter(v=>v.id!==id);
   markDirty('riepilogo');
   renderVoti(); dirty.voti = false;
-  scheduleSave('voti');
+  scheduleSave('voti', gruppoCorrente);
 }
 
 function apriModificaVoto(id){
@@ -899,7 +901,7 @@ function salvaModificaVoto(){
   closeModal('modal-modifica-voto');
   markDirty('riepilogo');
   renderVoti(); dirty.voti = false;
-  scheduleSave('voti');
+  scheduleSave('voti', gruppoCorrente);
 }
 
 // ─── RIEPILOGO ───────────────────────────────────────────
