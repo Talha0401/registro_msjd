@@ -604,6 +604,14 @@ async function loadFromSheets(gruppo) {
         note:    String(v.note    || '')
       }));
     }
+    if (data.note && data.note.length) {
+      db[gruppo].note = data.note.map(n => ({
+        id:    String(n.id    || ''),
+        data:  String(n.data  || '').substring(0, 10),
+        sid:   String(n.sid   || ''),
+        testo: String(n.testo || '')
+      }));
+    }
     setSyncStatus('ok', 'Sincronizzato — ' + new Date().toLocaleTimeString('it-IT'));
     // Invalida tutte le tab così al prossimo accesso si ri-renderizzano
     dirtyAll();
